@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}家長列表 - 學校 CRM{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="bi bi-people"></i> 家長列表</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-lg"></i> 新增家長
+        </button>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="searchInput" placeholder="搜尋姓名或電話...">
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>電話</th>
+                        <th>Email</th>
+                        <th>備註</th>
+                        <th>建立日期</th>
+                    </tr>
+                </thead>
+                <tbody id="parentTable">
+                    <tr><td colspan="5" class="text-center text-muted">載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 新增家長 Modal -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增家長</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="mb-3">
+                        <label class="form-label">姓名 *</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">電話 *</label>
+                        <input type="text" class="form-control" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">地址</label>
+                        <textarea class="form-control" name="address" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <textarea class="form-control" name="note" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addParent()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadParents(e.target.value), 300);
+});
+
+async function loadParents(q = '') {
+    const url = q ? `/api/parents?q=${encodeURIComponent(q)}` : '/api/parents';
+    const resp = await fetch(url);
+    const parents = await resp.json();
+    const tbody = document.getElementById('parentTable');
+    if (parents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">找不到家長資料</td></tr>';
+        return;
+    }
+    tbody.innerHTML = parents.map(p => `
+        <tr style="cursor:pointer" onclick="window.location='/parents/${p.id}'">
+            <td><strong>${p.name}</strong></td>
+            <td>${p.phone}</td>
+            <td>${p.email || '-'}</td>
+            <td>${p.note ? p.note.substring(0, 50) : '-'}</td>
+            <td>${new Date(p.created_at).toLocaleDateString()}</td>
+        </tr>
+    `).join('');
+}
+
+async function addParent() {
+    const form = document.getElementById('addForm');
+    const data = Object.fromEntries(new FormData(form));
+    Object.keys(data).forEach(k => { if (!data[k]) delete data[k]; });
+    const resp = await fetch('/api/parents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        form.reset();
+        loadParents();
+    } else {
+        const err = await resp.json();
+        alert(err.detail || '發生錯誤');
+    }
+}
+
+loadParents();
+</script>
+{% endblock %}

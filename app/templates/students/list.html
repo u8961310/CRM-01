@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}學生列表 - 學校 CRM{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="bi bi-person-badge"></i> 學生列表</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-lg"></i> 新增學生
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>年級</th>
+                        <th>備註</th>
+                        <th>建立日期</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTable">
+                    <tr><td colspan="4" class="text-center text-muted">載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 新增學生 Modal -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增學生</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="mb-3">
+                        <label class="form-label">姓名 *</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">年級 *</label>
+                        <input type="text" class="form-control" name="grade" required placeholder="例如：三年級">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <textarea class="form-control" name="note" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addStudent()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function loadStudents() {
+    const resp = await fetch('/api/students');
+    const students = await resp.json();
+    const tbody = document.getElementById('studentTable');
+    if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">找不到學生資料</td></tr>';
+        return;
+    }
+    tbody.innerHTML = students.map(s => `
+        <tr style="cursor:pointer" onclick="window.location='/students/${s.id}'">
+            <td><strong>${s.name}</strong></td>
+            <td>${s.grade}</td>
+            <td>${s.note || '-'}</td>
+            <td>${new Date(s.created_at).toLocaleDateString()}</td>
+        </tr>
+    `).join('');
+}
+
+async function addStudent() {
+    const form = document.getElementById('addForm');
+    const data = Object.fromEntries(new FormData(form));
+    Object.keys(data).forEach(k => { if (!data[k]) delete data[k]; });
+    const resp = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        form.reset();
+        loadStudents();
+    } else {
+        const err = await resp.json();
+        alert(err.detail || '發生錯誤');
+    }
+}
+
+loadStudents();
+</script>
+{% endblock %}

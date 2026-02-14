@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+{% block title %}家長詳情 - 學校 CRM{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/parents">家長列表</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbName">載入中...</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 家長資訊 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-person"></i> 家長資訊</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editParentModal">
+                    <i class="bi bi-pencil"></i> 編輯
+                </button>
+            </div>
+            <div class="card-body" id="parentInfo">載入中...</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-person-badge"></i> 關聯學生</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#linkStudentModal">
+                    <i class="bi bi-link-45deg"></i> 關聯
+                </button>
+            </div>
+            <div class="card-body" id="studentList">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 溝通紀錄 -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-chat-dots"></i> 溝通紀錄</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCommModal">
+                    <i class="bi bi-plus-lg"></i> 新增紀錄
+                </button>
+            </div>
+            <div class="card-body" id="commList">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 待辦事項 -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> 待辦事項</h5>
+            </div>
+            <div class="card-body" id="followUpList">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯家長 Modal -->
+<div class="modal fade" id="editParentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">編輯家長</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editParentForm">
+                    <div class="mb-3">
+                        <label class="form-label">姓名</label>
+                        <input type="text" class="form-control" name="name" id="editName">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">電話</label>
+                        <input type="text" class="form-control" name="phone" id="editPhone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" id="editEmail">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">地址</label>
+                        <textarea class="form-control" name="address" id="editAddress" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <textarea class="form-control" name="note" id="editNote" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="updateParent()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增溝通紀錄 Modal -->
+<div class="modal fade" id="addCommModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增溝通紀錄</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCommForm">
+                    <div class="mb-3">
+                        <label class="form-label">聯繫方式</label>
+                        <select class="form-select" name="contact_type" required>
+                            <option value="phone">電話</option>
+                            <option value="in_person">面談</option>
+                            <option value="line">LINE</option>
+                            <option value="email">Email</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">溝通摘要 *</label>
+                        <textarea class="form-control" name="summary" rows="4" required></textarea>
+                    </div>
+                    <hr>
+                    <h6>新增待辦（選填）</h6>
+                    <div class="mb-3">
+                        <label class="form-label">待辦說明</label>
+                        <textarea class="form-control" name="followup_desc" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">到期日</label>
+                        <input type="date" class="form-control" name="followup_due">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addCommunication()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 關聯學生 Modal -->
+<div class="modal fade" id="linkStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">關聯學生</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="linkStudentForm">
+                    <div class="mb-3">
+                        <label class="form-label">學生</label>
+                        <select class="form-select" id="studentSelect" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">關係</label>
+                        <select class="form-select" name="relationship_type" required>
+                            <option value="爸爸">爸爸</option>
+                            <option value="媽媽">媽媽</option>
+                            <option value="監護人">監護人</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="linkStudent()">確認關聯</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const CONTACT_TYPE_MAP = {
+    'phone': '電話', 'in_person': '面談', 'line': 'LINE', 'email': 'Email', 'other': '其他'
+};
+const parentId = '{{ parent_id }}';
+let parentData = null;
+let currentUserId = null;
+
+async function init() {
+    const meResp = await fetch('/api/auth/me');
+    if (meResp.ok) {
+        const me = await meResp.json();
+        currentUserId = me.id;
+    }
+    await loadParent();
+    await loadStudentOptions();
+}
+
+async function loadParent() {
+    const resp = await fetch(`/api/parents/${parentId}`);
+    if (!resp.ok) { document.getElementById('parentInfo').innerHTML = '<p class="text-danger">找不到此家長</p>'; return; }
+    parentData = await resp.json();
+
+    document.getElementById('breadcrumbName').textContent = parentData.name;
+
+    // 家長資訊
+    document.getElementById('parentInfo').innerHTML = `
+        <div class="row">
+            <div class="col-sm-6 mb-2"><strong>姓名：</strong>${parentData.name}</div>
+            <div class="col-sm-6 mb-2"><strong>電話：</strong>${parentData.phone}</div>
+            <div class="col-sm-6 mb-2"><strong>Email：</strong>${parentData.email || '-'}</div>
+            <div class="col-sm-6 mb-2"><strong>地址：</strong>${parentData.address || '-'}</div>
+        </div>
+        ${parentData.note ? `<div class="mt-2"><strong>備註：</strong><br>${parentData.note}</div>` : ''}
+    `;
+
+    // 填入編輯表單
+    document.getElementById('editName').value = parentData.name;
+    document.getElementById('editPhone').value = parentData.phone;
+    document.getElementById('editEmail').value = parentData.email || '';
+    document.getElementById('editAddress').value = parentData.address || '';
+    document.getElementById('editNote').value = parentData.note || '';
+
+    // 關聯學生
+    const studentDiv = document.getElementById('studentList');
+    if (parentData.students.length === 0) {
+        studentDiv.innerHTML = '<p class="text-muted">尚無關聯學生</p>';
+    } else {
+        studentDiv.innerHTML = parentData.students.map(s => `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <a href="/students/${s.student_id}"><strong>${s.student_name}</strong></a>
+                    <br><small class="text-muted">${s.grade} / ${s.relationship_type}</small>
+                </div>
+            </div>
+        `).join('<hr class="my-1">');
+    }
+
+    // 溝通紀錄
+    const commDiv = document.getElementById('commList');
+    if (parentData.communications.length === 0) {
+        commDiv.innerHTML = '<p class="text-muted">尚無溝通紀錄</p>';
+    } else {
+        commDiv.innerHTML = `<div class="list-group list-group-flush">` +
+            parentData.communications.map(c => `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <span class="badge bg-secondary">${CONTACT_TYPE_MAP[c.contact_type] || c.contact_type}</span>
+                        <small class="text-muted">${new Date(c.created_at).toLocaleString()} 紀錄者：${c.user_name || '-'}</small>
+                    </div>
+                    <p class="mb-0 mt-1">${c.summary}</p>
+                </div>
+            `).join('') + `</div>`;
+    }
+
+    // 待辦事項
+    const fuDiv = document.getElementById('followUpList');
+    if (parentData.follow_ups.length === 0) {
+        fuDiv.innerHTML = '<p class="text-muted">尚無待辦事項</p>';
+    } else {
+        fuDiv.innerHTML = `<div class="table-responsive"><table class="table table-sm">
+            <thead><tr><th>狀態</th><th>說明</th><th>到期日</th><th>負責人</th><th></th></tr></thead>
+            <tbody>` +
+            parentData.follow_ups.map(f => `
+                <tr class="${f.is_done ? 'text-decoration-line-through text-muted' : (f.due_date && f.due_date < new Date().toISOString().split('T')[0] ? 'table-danger' : '')}">
+                    <td>${f.is_done ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-circle text-warning"></i>'}</td>
+                    <td>${f.description}</td>
+                    <td>${f.due_date || '-'}</td>
+                    <td>${f.assigned_user_name || '-'}</td>
+                    <td>${!f.is_done ? `<button class="btn btn-sm btn-outline-success" onclick="markFollowUpDone('${f.id}')"><i class="bi bi-check"></i></button>` : ''}</td>
+                </tr>
+            `).join('') + `</tbody></table></div>`;
+    }
+}
+
+async function updateParent() {
+    const form = document.getElementById('editParentForm');
+    const data = Object.fromEntries(new FormData(form));
+    const resp = await fetch(`/api/parents/${parentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('editParentModal')).hide();
+        loadParent();
+    }
+}
+
+async function addCommunication() {
+    const form = document.getElementById('addCommForm');
+    const fd = new FormData(form);
+    const commResp = await fetch('/api/communications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            parent_id: parentId,
+            contact_type: fd.get('contact_type'),
+            summary: fd.get('summary'),
+        }),
+    });
+    if (!commResp.ok) { alert('新增紀錄失敗'); return; }
+    const comm = await commResp.json();
+
+    // 如果有填寫待辦說明，一併建立待辦
+    const fuDesc = fd.get('followup_desc');
+    if (fuDesc) {
+        await fetch('/api/follow-ups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                communication_id: comm.id,
+                parent_id: parentId,
+                assigned_to: currentUserId,
+                description: fuDesc,
+                due_date: fd.get('followup_due') || null,
+            }),
+        });
+    }
+
+    bootstrap.Modal.getInstance(document.getElementById('addCommModal')).hide();
+    form.reset();
+    loadParent();
+}
+
+async function markFollowUpDone(id) {
+    await fetch(`/api/follow-ups/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_done: true }),
+    });
+    loadParent();
+}
+
+async function loadStudentOptions() {
+    const resp = await fetch('/api/students');
+    const students = await resp.json();
+    const sel = document.getElementById('studentSelect');
+    sel.innerHTML = students.map(s => `<option value="${s.id}">${s.name}（${s.grade}）</option>`).join('');
+}
+
+async function linkStudent() {
+    const form = document.getElementById('linkStudentForm');
+    const fd = new FormData(form);
+    await fetch(`/api/parents/${parentId}/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            student_id: document.getElementById('studentSelect').value,
+            relationship_type: fd.get('relationship_type'),
+        }),
+    });
+    bootstrap.Modal.getInstance(document.getElementById('linkStudentModal')).hide();
+    loadParent();
+}
+
+init();
+</script>
+{% endblock %}

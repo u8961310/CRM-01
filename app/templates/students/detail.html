@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}學生詳情 - 學校 CRM{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/students">學生列表</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbName">載入中...</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-person-badge"></i> 學生資訊</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal">
+                    <i class="bi bi-pencil"></i> 編輯
+                </button>
+            </div>
+            <div class="card-body" id="studentInfo">載入中...</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-people"></i> 家長</h5>
+            </div>
+            <div class="card-body" id="parentList">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯 Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">編輯學生</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <div class="mb-3">
+                        <label class="form-label">姓名</label>
+                        <input type="text" class="form-control" name="name" id="editName">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">年級</label>
+                        <input type="text" class="form-control" name="grade" id="editGrade">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <textarea class="form-control" name="note" id="editNote" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="updateStudent()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const studentId = '{{ student_id }}';
+
+async function loadStudent() {
+    const resp = await fetch(`/api/students/${studentId}`);
+    if (!resp.ok) { document.getElementById('studentInfo').innerHTML = '<p class="text-danger">找不到此學生</p>'; return; }
+    const student = await resp.json();
+
+    document.getElementById('breadcrumbName').textContent = student.name;
+    document.getElementById('studentInfo').innerHTML = `
+        <p><strong>姓名：</strong>${student.name}</p>
+        <p><strong>年級：</strong>${student.grade}</p>
+        ${student.note ? `<p><strong>備註：</strong>${student.note}</p>` : ''}
+    `;
+    document.getElementById('editName').value = student.name;
+    document.getElementById('editGrade').value = student.grade;
+    document.getElementById('editNote').value = student.note || '';
+}
+
+async function loadParents() {
+    const parentDiv = document.getElementById('parentList');
+    parentDiv.innerHTML = '<p class="text-muted">請至家長詳情頁面查看關聯資訊。</p>';
+}
+
+async function updateStudent() {
+    const form = document.getElementById('editForm');
+    const data = Object.fromEntries(new FormData(form));
+    const resp = await fetch(`/api/students/${studentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        loadStudent();
+    }
+}
+
+loadStudent();
+loadParents();
+</script>
+{% endblock %}

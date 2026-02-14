@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}總覽 - 學校 CRM{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="bi bi-speedometer2"></i> 總覽</h2>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">待辦事項</h5>
+                <h2 id="pendingCount">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">已逾期</h5>
+                <h2 id="overdueCount">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h5 class="card-title">家長總數</h5>
+                <h2 id="parentCount">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-info">
+            <div class="card-body">
+                <h5 class="card-title">學生總數</h5>
+                <h2 id="studentCount">-</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> 我的待辦事項</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>家長</th>
+                                <th>說明</th>
+                                <th>到期日</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="followUpTable">
+                            <tr><td colspan="4" class="text-center text-muted">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const today = new Date().toISOString().split('T')[0];
+
+async function loadDashboard() {
+    try {
+        const [followResp, parentResp, studentResp] = await Promise.all([
+            fetch('/api/follow-ups?mine=true&pending=true'),
+            fetch('/api/parents'),
+            fetch('/api/students'),
+        ]);
+        const followUps = await followResp.json();
+        const parents = await parentResp.json();
+        const students = await studentResp.json();
+
+        document.getElementById('pendingCount').textContent = followUps.length;
+        document.getElementById('parentCount').textContent = parents.length;
+        document.getElementById('studentCount').textContent = students.length;
+
+        let overdue = 0;
+        const tbody = document.getElementById('followUpTable');
+        if (followUps.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">目前沒有待辦事項</td></tr>';
+        } else {
+            tbody.innerHTML = '';
+            followUps.forEach(f => {
+                const isOverdue = f.due_date && f.due_date < today;
+                if (isOverdue) overdue++;
+                const row = document.createElement('tr');
+                if (isOverdue) row.classList.add('table-danger');
+                row.innerHTML = `
+                    <td><a href="/parents/${f.parent_id}">${f.parent_name || '-'}</a></td>
+                    <td>${f.description}</td>
+                    <td>${f.due_date || '<span class="text-muted">未設定</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" onclick="markDone('${f.id}')">
+                            <i class="bi bi-check-lg"></i> 完成
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        document.getElementById('overdueCount').textContent = overdue;
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function markDone(id) {
+    await fetch(`/api/follow-ups/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_done: true }),
+    });
+    loadDashboard();
+}
+
+loadDashboard();
+</script>
+{% endblock %}
