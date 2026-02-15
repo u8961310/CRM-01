@@ -13,9 +13,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 優先使用環境變數 DATABASE_URL
+# 優先使用環境變數 DATABASE_URL，並確保使用 asyncpg 驅動
 db_url = os.getenv("DATABASE_URL")
 if db_url:
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
