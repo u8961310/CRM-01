@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -11,6 +12,11 @@ import app.models  # noqa: F401 — ensure all models are registered
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# 優先使用環境變數 DATABASE_URL
+db_url = os.getenv("DATABASE_URL")
+if db_url:
+    config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
 
