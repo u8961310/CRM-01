@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}說明會場次 - 學校 CRM{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="bi bi-calendar-event"></i> 說明會場次</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-lg"></i> 新增場次
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>場次名稱</th>
+                        <th>日期</th>
+                        <th>時間</th>
+                        <th>地點</th>
+                        <th>報名人數</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="sessionTable">
+                    <tr><td colspan="6" class="text-center text-muted">載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 新增場次 Modal -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增說明會場次</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="mb-3">
+                        <label class="form-label">場次名稱 *</label>
+                        <input type="text" class="form-control" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">說明</label>
+                        <textarea class="form-control" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">日期 *</label>
+                            <input type="date" class="form-control" name="session_date" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">時間 *</label>
+                            <input type="text" class="form-control" name="session_time" required placeholder="例如：14:00-16:00">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">地點 *</label>
+                        <input type="text" class="form-control" name="location" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">名額上限</label>
+                        <input type="number" class="form-control" name="capacity" min="0" placeholder="留空或 0 表示不限">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addSession()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function loadSessions() {
+    const resp = await fetch('/api/info-sessions');
+    const sessions = await resp.json();
+    const tbody = document.getElementById('sessionTable');
+    if (sessions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">尚無說明會場次</td></tr>';
+        return;
+    }
+    tbody.innerHTML = sessions.map(s => {
+        const capText = s.capacity ? `${s.registration_count} / ${s.capacity}` : `${s.registration_count}`;
+        return `
+        <tr>
+            <td><a href="/info-sessions/${s.id}"><strong>${s.title}</strong></a></td>
+            <td>${s.session_date}</td>
+            <td>${s.session_time}</td>
+            <td>${s.location}</td>
+            <td>${capText}</td>
+            <td>
+                <a href="/info-sessions/${s.id}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> 查看
+                </a>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function addSession() {
+    const form = document.getElementById('addForm');
+    const data = Object.fromEntries(new FormData(form));
+    if (data.capacity === '') delete data.capacity;
+    else data.capacity = parseInt(data.capacity) || null;
+    Object.keys(data).forEach(k => { if (data[k] === '') delete data[k]; });
+    const resp = await fetch('/api/info-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        form.reset();
+        loadSessions();
+    } else {
+        const err = await resp.json();
+        alert(err.detail || '發生錯誤');
+    }
+}
+
+loadSessions();
+</script>
+{% endblock %}

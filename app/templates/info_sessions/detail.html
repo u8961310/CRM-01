@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block title %}說明會詳情 - 學校 CRM{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/info-sessions">說明會場次</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbName">載入中...</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 場次資訊 -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> 場次資訊</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal">
+                    <i class="bi bi-pencil"></i> 編輯
+                </button>
+            </div>
+            <div class="card-body" id="sessionInfo">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 報名名單 -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-people"></i> 報名名單</h5>
+                <div>
+                    <button class="btn btn-sm btn-success me-2" onclick="sendEmails()">
+                        <i class="bi bi-envelope"></i> 發送通知 Email
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                        <i class="bi bi-upload"></i> CSV 匯入
+                    </button>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addRegModal">
+                        <i class="bi bi-plus-lg"></i> 新增報名
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>Email</th>
+                                <th>狀態</th>
+                                <th>已寄信</th>
+                                <th>備註</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="regTable">
+                            <tr><td colspan="6" class="text-center text-muted">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯場次 Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">編輯場次</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <div class="mb-3">
+                        <label class="form-label">場次名稱</label>
+                        <input type="text" class="form-control" name="title" id="editTitle">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">說明</label>
+                        <textarea class="form-control" name="description" id="editDesc" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">日期</label>
+                            <input type="date" class="form-control" name="session_date" id="editDate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">時間</label>
+                            <input type="text" class="form-control" name="session_time" id="editTime">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">地點</label>
+                        <input type="text" class="form-control" name="location" id="editLocation">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">名額上限</label>
+                        <input type="number" class="form-control" name="capacity" id="editCapacity" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="updateSession()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增報名 Modal -->
+<div class="modal fade" id="addRegModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增報名者</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addRegForm">
+                    <div class="mb-3">
+                        <label class="form-label">姓名 *</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <textarea class="form-control" name="note" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addRegistration()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSV 匯入 Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">CSV 匯入報名名單</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">CSV 格式：每列兩欄，<code>姓名, Email</code>（可含標題列）</p>
+                <div class="mb-3">
+                    <label class="form-label">選擇 CSV 檔案</label>
+                    <input type="file" class="form-control" id="csvFile" accept=".csv">
+                </div>
+                <div id="importResult" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                <button type="button" class="btn btn-primary" onclick="importCSV()">
+                    <i class="bi bi-upload"></i> 匯入
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const STATUS_MAP = { 'pending': '待確認', 'confirmed': '已確認', 'cancelled': '已取消' };
+const STATUS_CLASS = { 'pending': 'bg-warning', 'confirmed': 'bg-success', 'cancelled': 'bg-secondary' };
+const sessionId = '{{ session_id }}';
+let sessionData = null;
+
+async function loadSession() {
+    const resp = await fetch(`/api/info-sessions/${sessionId}`);
+    if (!resp.ok) { document.getElementById('sessionInfo').innerHTML = '<p class="text-danger">找不到此場次</p>'; return; }
+    sessionData = await resp.json();
+
+    document.getElementById('breadcrumbName').textContent = sessionData.title;
+
+    // 場次資訊
+    const capText = sessionData.capacity ? `${sessionData.registrations.length} / ${sessionData.capacity}` : `${sessionData.registrations.length} 人`;
+    document.getElementById('sessionInfo').innerHTML = `
+        <div class="row">
+            <div class="col-sm-6 mb-2"><strong>名稱：</strong>${sessionData.title}</div>
+            <div class="col-sm-6 mb-2"><strong>日期：</strong>${sessionData.session_date}</div>
+            <div class="col-sm-6 mb-2"><strong>時間：</strong>${sessionData.session_time}</div>
+            <div class="col-sm-6 mb-2"><strong>地點：</strong>${sessionData.location}</div>
+            <div class="col-sm-6 mb-2"><strong>報名人數：</strong>${capText}</div>
+        </div>
+        ${sessionData.description ? `<div class="mt-2"><strong>說明：</strong><br>${sessionData.description}</div>` : ''}
+    `;
+
+    // 填入編輯表單
+    document.getElementById('editTitle').value = sessionData.title;
+    document.getElementById('editDesc').value = sessionData.description || '';
+    document.getElementById('editDate').value = sessionData.session_date;
+    document.getElementById('editTime').value = sessionData.session_time;
+    document.getElementById('editLocation').value = sessionData.location;
+    document.getElementById('editCapacity').value = sessionData.capacity || '';
+
+    // 報名名單
+    const tbody = document.getElementById('regTable');
+    if (sessionData.registrations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">尚無報名者</td></tr>';
+    } else {
+        tbody.innerHTML = sessionData.registrations.map(r => `
+            <tr>
+                <td>${r.name}</td>
+                <td>${r.email}</td>
+                <td><span class="badge ${STATUS_CLASS[r.status]}">${STATUS_MAP[r.status]}</span></td>
+                <td>${r.email_sent ? '<i class="bi bi-check-circle-fill text-success"></i> 已寄' : '<i class="bi bi-circle text-muted"></i> 未寄'}</td>
+                <td>${r.note || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeReg('${r.id}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+}
+
+async function updateSession() {
+    const form = document.getElementById('editForm');
+    const data = Object.fromEntries(new FormData(form));
+    if (data.capacity === '') delete data.capacity;
+    else data.capacity = parseInt(data.capacity) || null;
+    const resp = await fetch(`/api/info-sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        loadSession();
+    }
+}
+
+async function addRegistration() {
+    const form = document.getElementById('addRegForm');
+    const data = Object.fromEntries(new FormData(form));
+    Object.keys(data).forEach(k => { if (!data[k]) delete data[k]; });
+    const resp = await fetch(`/api/info-sessions/${sessionId}/registrations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('addRegModal')).hide();
+        form.reset();
+        loadSession();
+    } else {
+        const err = await resp.json();
+        alert(err.detail || '發生錯誤');
+    }
+}
+
+async function removeReg(regId) {
+    if (!confirm('確定要移除此報名者？')) return;
+    await fetch(`/api/info-sessions/${sessionId}/registrations/${regId}`, { method: 'DELETE' });
+    loadSession();
+}
+
+async function importCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const resultDiv = document.getElementById('importResult');
+    if (!fileInput.files.length) { alert('請選擇 CSV 檔案'); return; }
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    const resp = await fetch(`/api/info-sessions/${sessionId}/registrations/import`, {
+        method: 'POST',
+        body: formData,
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+        resultDiv.className = 'alert alert-success';
+        resultDiv.textContent = `匯入成功：${data.imported} 筆，略過：${data.skipped} 筆`;
+        resultDiv.classList.remove('d-none');
+        loadSession();
+    } else {
+        resultDiv.className = 'alert alert-danger';
+        resultDiv.textContent = data.detail || '匯入失敗';
+        resultDiv.classList.remove('d-none');
+    }
+}
+
+async function sendEmails() {
+    if (!confirm('確定要發送通知 Email 給所有尚未寄送的報名者？')) return;
+    const resp = await fetch(`/api/info-sessions/${sessionId}/send-email`, { method: 'POST' });
+    const data = await resp.json();
+    if (resp.ok) {
+        alert(data.message);
+        loadSession();
+    } else {
+        alert(data.detail || '發送失敗');
+    }
+}
+
+loadSession();
+</script>
+{% endblock %}

@@ -37,3 +37,13 @@ async def students_list(request: Request):
 @router.get("/students/{student_id}", response_class=HTMLResponse)
 async def student_detail(request: Request, student_id: uuid.UUID):
     return templates.TemplateResponse("students/detail.html", {"request": request, "student_id": str(student_id)})
+
+
+@router.get("/info-sessions", response_class=HTMLResponse)
+async def info_sessions_list(request: Request):
+    return templates.TemplateResponse("info_sessions/list.html", {"request": request})
+
+
+@router.get("/info-sessions/{session_id}", response_class=HTMLResponse)
+async def info_session_detail(request: Request, session_id: uuid.UUID):
+    return templates.TemplateResponse("info_sessions/detail.html", {"request": request, "session_id": str(session_id)})
