@@ -1,6 +1,6 @@
 {
   "python": {
     "entry": "app/main.py",
-    "start_command": "alembic upgrade head && _startup"
+    "start_command": "alembic upgrade head && python scripts/seed.py && _startup"
   }
 }
